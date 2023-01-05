@@ -14,7 +14,7 @@ import { Cities } from "../Locations/Cities";
 import { IndustryType } from "./data/Enums";
 import { ResearchMap } from "./ResearchMap";
 import { isRelevantMaterial } from "./ui/Helpers";
-import { CityName } from "../Enums";
+import { CityName, CityNames } from "../Enums";
 import { getRandomInt } from "../utils/helpers/getRandomInt";
 import { CorpResearchName } from "@nsdefs";
 
@@ -474,7 +474,7 @@ export function Research(division: Industry, researchName: CorpResearchName): vo
   // whether research is done by script or UI. All other stats gets calculated in every cycle
   // Warehouse size gets updated only when something increases it.
   if (researchName == "Drones - Transport") {
-    for (const city of Object.values(CityName)) {
+    for (const city of CityNames) {
       const warehouse = division.warehouses[city];
       if (!warehouse) continue;
 

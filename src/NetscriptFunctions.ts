@@ -74,8 +74,7 @@ import { NS, RecentScript, BasicHGWOptions, ProcessInfo, NSEnums } from "@nsdefs
 import { NetscriptSingularity } from "./NetscriptFunctions/Singularity";
 
 import { dialogBoxCreate } from "./ui/React/DialogBox";
-import { SnackbarEvents, ToastVariant } from "./ui/React/Snackbar";
-import { checkEnum } from "./utils/helpers/enum";
+import { SnackbarEvents, ToastVariant, ToastVariants } from "./ui/React/Snackbar";
 
 import { Flags } from "./NetscriptFunctions/Flags";
 import { calculateIntelligenceBonus } from "./PersonObjects/formulas/intelligence";
@@ -86,21 +85,28 @@ import { INetscriptExtra } from "./NetscriptFunctions/Extra";
 import { ScriptDeath } from "./Netscript/ScriptDeath";
 import { getBitNodeMultipliers } from "./BitNode/BitNode";
 import { assert, arrayAssert, stringAssert, objectAssert } from "./utils/helpers/typeAssertion";
-import { CityName, JobName, CrimeType, GymType, LocationName, UniversityClassType } from "./Enums";
+import {
+  CityNames,
+  JobNames,
+  CrimeTypes,
+  GymTypes,
+  LocationNames,
+  UniversityClassTypes,
+  FactionWorkTypes,
+} from "./Enums";
 import { cloneDeep } from "lodash";
-import { FactionWorkType } from "./Enums";
 import numeral from "numeral";
 import { clearPort, peekPort, portHandle, readPort, tryWritePort, writePort } from "./NetscriptPort";
 
 export const enums: NSEnums = {
-  CityName,
-  CrimeType,
-  FactionWorkType,
-  GymType,
-  LocationName,
-  JobName,
-  ToastVariant,
-  UniversityClassType,
+  CityName: CityNames,
+  CrimeType: CrimeTypes,
+  FactionWorkType: FactionWorkTypes,
+  GymType: GymTypes,
+  LocationName: LocationNames,
+  JobName: JobNames,
+  ToastVariant: ToastVariants,
+  UniversityClassType: UniversityClassTypes,
 };
 for (const val of Object.values(enums)) Object.freeze(val);
 Object.freeze(enums);
@@ -1707,12 +1713,11 @@ export const ns: InternalAPI<NSFull> = {
   },
   toast:
     (ctx) =>
-    (_message, _variant = ToastVariant.SUCCESS, _duration = 2000) => {
+    (_message, _variant = ToastVariants.SUCCESS, _duration = 2000) => {
       const message = helpers.string(ctx, "message", _message);
       const variant = helpers.string(ctx, "variant", _variant);
       const duration = _duration === null ? null : helpers.number(ctx, "duration", _duration);
-      if (!checkEnum(ToastVariant, variant))
-        throw new Error(`variant must be one of ${Object.values(ToastVariant).join(", ")}`);
+      if (!ToastVariants.has(variant)) throw new Error(`variant must be one of ${[...ToastVariants].join(", ")}`);
       SnackbarEvents.emit(message, variant as ToastVariant, duration);
     },
   prompt: (ctx) => (_txt, _options) => {
