@@ -1,6 +1,6 @@
 import $ from "jquery";
 import { vsprintf, sprintf } from "sprintf-js";
-import { BitNodeMultipliers, IBitNodeMultipliers } from "./BitNode/BitNodeMultipliers";
+import { currentNodeMults } from "./BitNode/BitNodeMultipliers";
 import { CONSTANTS } from "./Constants";
 import {
   calculateHackingChance,
@@ -13,7 +13,18 @@ import {
 import { netscriptCanGrow, netscriptCanWeaken } from "./Hacking/netscriptCanHack";
 import { Terminal } from "./Terminal";
 import { Player } from "@player";
-import { CompletedProgramName } from "./Programs/Programs";
+import {
+  CityName,
+  CompletedProgramName,
+  CrimeType,
+  FactionWorkType,
+  GymType,
+  JobName,
+  LiteratureName,
+  LocationName,
+  ToastVariant,
+  UniversityClassType,
+} from "@enums";
 import { PromptEvent } from "./ui/React/PromptManager";
 import { GetServer, DeleteServer, AddToAllServers, createUniqueRandomIp } from "./Server/AllServers";
 import {
@@ -68,8 +79,7 @@ import { NS, RecentScript, BasicHGWOptions, ProcessInfo, NSEnums } from "@nsdefs
 import { NetscriptSingularity } from "./NetscriptFunctions/Singularity";
 
 import { dialogBoxCreate } from "./ui/React/DialogBox";
-import { SnackbarEvents, ToastVariant } from "./ui/React/Snackbar";
-import { checkEnum } from "./utils/helpers/enum";
+import { SnackbarEvents } from "./ui/React/Snackbar";
 import { matchScriptPathExact } from "./utils/helpers/scriptKey";
 
 import { Flags } from "./NetscriptFunctions/Flags";
@@ -81,26 +91,24 @@ import { INetscriptExtra } from "./NetscriptFunctions/Extra";
 import { ScriptDeath } from "./Netscript/ScriptDeath";
 import { getBitNodeMultipliers } from "./BitNode/BitNode";
 import { assert, arrayAssert, stringAssert, objectAssert } from "./utils/helpers/typeAssertion";
-import { CityName, JobName, CrimeType, GymType, LocationName, UniversityClassType } from "./Enums";
 import { cloneDeep, escapeRegExp } from "lodash";
-import { FactionWorkType } from "./Enums";
 import numeral from "numeral";
 import { clearPort, peekPort, portHandle, readPort, tryWritePort, writePort } from "./NetscriptPort";
 import { FilePath, resolveFilePath } from "./Paths/FilePath";
 import { hasScriptExtension } from "./Paths/ScriptFilePath";
 import { hasTextExtension } from "./Paths/TextFilePath";
 import { ContentFilePath } from "./Paths/ContentFile";
-import { LiteratureName } from "./Literature/data/LiteratureNames";
 import { hasContractExtension } from "./Paths/ContractFilePath";
 import { getRamCost } from "./Netscript/RamCostGenerator";
+import { getEnumHelper } from "./utils/EnumHelper";
 
 export const enums: NSEnums = {
   CityName,
   CrimeType,
   FactionWorkType,
   GymType,
-  LocationName,
   JobName,
+  LocationName,
   ToastVariant,
   UniversityClassType,
 };
@@ -399,7 +407,7 @@ export const ns: InternalAPI<NSFull> = {
         ctx.workerScript.scriptRef.onlineExpGained += expGain;
         Player.gainHackingExp(expGain);
         // Account for hidden multiplier in Server.weaken()
-        return Promise.resolve(weakenAmt * BitNodeMultipliers.ServerWeakenRate);
+        return Promise.resolve(weakenAmt * currentNodeMults.ServerWeakenRate);
       });
     },
   weakenAnalyze:
@@ -408,7 +416,7 @@ export const ns: InternalAPI<NSFull> = {
       const threads = helpers.number(ctx, "threads", _threads);
       const cores = helpers.number(ctx, "cores", _cores);
       const coreBonus = 1 + (cores - 1) / 16;
-      return CONSTANTS.ServerWeakenAmount * threads * coreBonus * BitNodeMultipliers.ServerWeakenRate;
+      return CONSTANTS.ServerWeakenAmount * threads * coreBonus * currentNodeMults.ServerWeakenRate;
     },
   share: (ctx) => () => {
     helpers.log(ctx, () => "Sharing this computer.");
@@ -959,7 +967,7 @@ export const ns: InternalAPI<NSFull> = {
   },
   getBitNodeMultipliers:
     (ctx) =>
-    (_n = Player.bitNodeN, _lvl = Player.sourceFileLvl(Player.bitNodeN) + 1): IBitNodeMultipliers => {
+    (_n = Player.bitNodeN, _lvl = Player.sourceFileLvl(Player.bitNodeN) + 1) => {
       if (Player.sourceFileLvl(5) <= 0 && Player.bitNodeN !== 5)
         throw helpers.makeRuntimeErrorMsg(ctx, "Requires Source-File 5 to run.");
       const n = Math.round(helpers.number(ctx, "n", _n));
@@ -1600,10 +1608,8 @@ export const ns: InternalAPI<NSFull> = {
     (ctx) =>
     (_message, _variant = ToastVariant.SUCCESS, _duration = 2000) => {
       const message = helpers.string(ctx, "message", _message);
-      const variant = helpers.string(ctx, "variant", _variant);
+      const variant = getEnumHelper("ToastVariant").nsGetMember(ctx, _variant);
       const duration = _duration === null ? null : helpers.number(ctx, "duration", _duration);
-      if (!checkEnum(ToastVariant, variant))
-        throw new Error(`variant must be one of ${Object.values(ToastVariant).join(", ")}`);
       SnackbarEvents.emit(message, variant as ToastVariant, duration);
     },
   prompt: (ctx) => (_txt, _options) => {
@@ -1673,7 +1679,7 @@ export const ns: InternalAPI<NSFull> = {
     });
   },
   getFavorToDonate: () => () => {
-    return Math.floor(CONSTANTS.BaseFavorToDonate * BitNodeMultipliers.RepToDonateToFaction);
+    return Math.floor(CONSTANTS.BaseFavorToDonate * currentNodeMults.RepToDonateToFaction);
   },
   getPlayer: () => () => {
     const data = {
@@ -1760,6 +1766,12 @@ export const ns: InternalAPI<NSFull> = {
   getFunctionRamCost: (ctx) => (_name) => {
     const name = helpers.string(ctx, "name", _name);
     return getRamCost(...name.split("."));
+  },
+  tprintRaw: () => (value) => {
+    Terminal.printRaw(wrapUserNode(value));
+  },
+  printRaw: (ctx) => (value) => {
+    ctx.workerScript.print(wrapUserNode(value));
   },
   flags: Flags,
   ...NetscriptExtra(),

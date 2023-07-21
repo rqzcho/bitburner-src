@@ -1,8 +1,8 @@
+import { CorpMaterialName, CorpResearchName, CorpStateName } from "@nsdefs";
+import { CityName, CorpEmployeeJob, IndustryType } from "@enums";
 import { constructorsForReviver, Generic_toJSON, Generic_fromJSON, IReviverValue } from "../utils/JSONReviver";
-import { CityName } from "../Enums";
-import { IndustryResearchTrees, IndustriesData } from "./IndustryData";
+import { IndustryResearchTrees, IndustriesData } from "./data/IndustryData";
 import * as corpConstants from "./data/Constants";
-import { CorpEmployeeJob, IndustryType } from "./data/Enums";
 import { getRandomInt } from "../utils/helpers/getRandomInt";
 import { calculateEffectWithFactors } from "../utils/calculateEffectWithFactors";
 import { OfficeSpace } from "./OfficeSpace";
@@ -12,7 +12,6 @@ import { isString } from "../utils/helpers/string";
 import { MaterialInfo } from "./MaterialInfo";
 import { Warehouse } from "./Warehouse";
 import { Corporation } from "./Corporation";
-import { CorpMaterialName, CorpResearchName, CorpStateName } from "@nsdefs";
 import { JSONMap, JSONSet } from "../Types/Jsonable";
 import { PartialRecord, getRecordEntries, getRecordKeys, getRecordValues } from "../Types/Record";
 import { Material } from "./Material";
@@ -629,10 +628,10 @@ export class Division {
                   /MAX/g,
                   (mat.stored / (corpConstants.secondsPerMarketCycle * marketCycles)).toString(),
                 );
-                amtStr = amtStr.replace(/EPROD/g, "(" + mat.productionAmount + ")");
-                amtStr = amtStr.replace(/IPROD/g, "(" + tempMaterial.productionAmount + ")");
-                amtStr = amtStr.replace(/EINV/g, mat.stored.toString());
-                amtStr = amtStr.replace(/IINV/g, tempMaterial.stored.toString());
+                amtStr = amtStr.replace(/EPROD/g, `(${mat.productionAmount})`);
+                amtStr = amtStr.replace(/IPROD/g, `(${tempMaterial.productionAmount})`);
+                amtStr = amtStr.replace(/EINV/g, `(${mat.stored})`);
+                amtStr = amtStr.replace(/IINV/g, `(${tempMaterial.stored})`);
                 let amt = 0;
                 try {
                   amt = eval(amtStr);

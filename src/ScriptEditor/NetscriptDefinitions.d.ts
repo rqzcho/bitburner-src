@@ -183,8 +183,21 @@ interface TailProperties {
 
 /**
  * @public
- * A stand-in for the real React.ReactElement, which API-extractor doesn't know about.
- * Don't try to create one of these by hand; use React.createElement().
+ * A stand-in for the real React.ReactNode.
+ * A {@link ReactElement} is rendered dynamically with React.
+ * number and string are displayed directly.
+ * boolean, null, and undefined are ignored and not rendered.
+ * An array of ReactNodes will display all members of that array sequentially.
+ *
+ * Use React.createElement to make the ReactElement type, see {@link https://react.dev/reference/react/createElement#creating-an-element-without-jsx | creating an element without jsx} from the official React documentation.
+ */
+type ReactNode = ReactElement | string | number | null | undefined | boolean | ReactNode[];
+
+/**
+ * @public
+ * A stand-in for the real React.ReactElement.
+ * Use React.createElement to make these.
+ * See {@link https://react.dev/reference/react/createElement#creating-an-element-without-jsx | creating an element without jsx} from the official React documentation.
  */
 interface ReactElement {
   type: string | ((props: any) => ReactElement | null) | (new (props: any) => object);
@@ -342,13 +355,13 @@ interface AugmentPair {
 }
 
 /** @public */
-declare enum PositionTypes {
+declare enum PositionType {
   Long = "L",
   Short = "S",
 }
 
 /** @public */
-declare enum OrderTypes {
+declare enum OrderType {
   LimitBuy = "Limit Buy Order",
   LimitSell = "Limit Sell Order",
   StopBuy = "Stop Buy Order",
@@ -365,9 +378,9 @@ interface StockOrderObject {
   /** Price per share */
   price: number;
   /** Order type */
-  type: OrderTypes;
+  type: OrderType;
   /** Order position */
-  position: PositionTypes;
+  position: PositionType;
 }
 
 /**
@@ -911,17 +924,17 @@ interface GangMemberInfo {
 interface GangMemberAscension {
   /** Amount of respect lost from ascending */
   respect: number;
-  /** Hacking multiplier gained from ascending */
+  /** Factor by which the hacking ascension multiplier was increased (newMult / oldMult) */
   hack: number;
-  /** Strength multiplier gained from ascending */
+  /** Factor by which the strength ascension multiplier was increased (newMult / oldMult) */
   str: number;
-  /** Defense multiplier gained from ascending */
+  /** Factor by which the defense ascension multiplier was increased (newMult / oldMult) */
   def: number;
-  /** Dexterity multiplier gained from ascending */
+  /** Factor by which the dexterity ascension multiplier was increased (newMult / oldMult) */
   dex: number;
-  /** Agility multiplier gained from ascending */
+  /** Factor by which the agility ascension multiplier was increased (newMult / oldMult) */
   agi: number;
-  /** Charisma multiplier gained from ascending */
+  /** Factor by which the charisma ascension multiplier was increased (newMult / oldMult) */
   cha: number;
 }
 
@@ -3508,7 +3521,7 @@ export interface Gang {
    * Ascend the specified Gang Member.
    *
    * @param memberName - Name of member to ascend.
-   * @returns Object with info about the ascension results. Undefined if ascension did not occur.
+   * @returns Object with info about the ascension results, or undefined if ascension did not occur.
    */
   ascendMember(memberName: string): GangMemberAscension | undefined;
 
@@ -3517,10 +3530,10 @@ export interface Gang {
    * @remarks
    * RAM cost: 2 GB
    *
-   * Get the result of an ascension without ascending.
+   * Get a {@link GangMemberAscension} result for ascending a gang member without performing the ascension.
    *
    * @param memberName - Name of member.
-   * @returns Object with info about the ascension results. Undefined if ascension is impossible.
+   * @returns Object with info about the ascension results, or undefined if ascension is not possible.
    */
   getAscensionResult(memberName: string): GangMemberAscension | undefined;
 
@@ -4919,6 +4932,15 @@ export interface NS {
    */
   print(...args: any[]): void;
 
+  /** Prints a ReactNode to the script logs.
+   * @remarks
+   * RAM cost: 0 GB
+   *
+   * See {@link ReactNode} type for the acceptable values.
+   *
+   * @param node - The react node to be printed. */
+  printRaw(node: ReactNode): void;
+
   /**
    * Prints a formatted string to the script’s logs.
    * @remarks
@@ -4956,6 +4978,15 @@ export interface NS {
    * @param args - Value(s) to be printed.
    */
   tprint(...args: any[]): void;
+
+  /** Prints a ReactNode to the terminal.
+   * @remarks
+   * RAM cost: 0 GB
+   *
+   * See {@link ReactNode} type for the acceptable values.
+   *
+   * @param node - The react node to be printed. */
+  tprintRaw(node: ReactNode): void;
 
   /**
    * Prints a raw value or a variable to the Terminal.
@@ -5149,14 +5180,12 @@ export interface NS {
    *
    * Otherwise, the pid argument can be used to change the logs from another script.
    *
-   * It is possible to pass a React Element instead of a string. Get these by calling
-   * React.createElement() with appropriate parameters. You should either know
-   * or be willing to learn about the React UI library if you go down this
-   * route, and there will likely be rough edges.
+   * It is possible to pass any React Node instead of a string.
+   * See {@link ReactElement} and {@link ReactNode} types for additional info.
    *
    * @param pid - Optional. PID of the script having its tail closed. If omitted, the current script is used.
    */
-  setTitle(title: string | ReactElement, pid?: number): void;
+  setTitle(title: string | ReactNode, pid?: number): void;
 
   /**
    * Get the list of servers connected to a server.
@@ -5482,7 +5511,7 @@ export interface NS {
    * ns.scp("foo.lit", "home", "helios" );
    *
    * //Tries to copy three files from rothman-uni to home computer:
-   * files = ["foo1.lit", "foo2.txt", "foo3.js"];
+   * const files = ["foo1.lit", "foo2.txt", "foo3.js"];
    * ns.scp(files, "home", "rothman-uni");
    * ```
    * @example
@@ -6699,12 +6728,10 @@ declare enum JobName {
   business3 = "Operations Manager",
   business4 = "Chief Financial Officer",
   business5 = "Chief Executive Officer",
-  security0 = "Police Officer",
-  security1 = "Police Chief",
-  security2 = "Security Guard",
-  security3 = "Security Officer",
-  security4 = "Security Supervisor",
-  security5 = "Head of Security",
+  security0 = "Security Guard",
+  security1 = "Security Officer",
+  security2 = "Security Supervisor",
+  security3 = "Head of Security",
   agent0 = "Field Agent",
   agent1 = "Secret Agent",
   agent2 = "Special Operative",
@@ -6746,6 +6773,9 @@ type CorpIndustryName =
   | "Software"
   | "Healthcare"
   | "Real Estate";
+
+/** @public */
+type CorpSmartSupplyOption = "leftovers" | "imports" | "none";
 
 /** Names of all cities
  * @public */
@@ -7002,7 +7032,7 @@ export interface WarehouseAPI {
     divisionName: string,
     city: CityName | `${CityName}`,
     materialName: string,
-    option: string,
+    option: CorpSmartSupplyOption,
   ): void;
   /**
    * Set material buy data
@@ -7369,6 +7399,8 @@ interface CorporationInfo {
 interface CorpConstants {
   /** Names of all corporation game states */
   stateNames: CorpStateName[];
+  /** Names of all employee positions */
+  employeePositions: CorpEmployeePosition[];
   /** Names of all industries */
   industryNames: CorpIndustryName[];
   /** Names of all materials */
@@ -7412,6 +7444,7 @@ interface CorpConstants {
   maxProductsBase: number;
   /** The minimum decay value for morale/energy */
   minEmployeeDecay: number;
+  smartSupplyOptions: CorpSmartSupplyOption[];
 }
 /** @public */
 type CorpStateName = "START" | "PURCHASE" | "PRODUCTION" | "EXPORT" | "SALE";
@@ -7558,6 +7591,10 @@ interface Product {
   actualSellAmount: number;
   /** A number between 0-100 representing percentage completion */
   developmentProgress: number;
+  /** Funds that were spent on advertising the product */
+  advertisingInvestment: number;
+  /** Funds that were spent on designing the product */
+  designInvestment: number;
 }
 
 /**
